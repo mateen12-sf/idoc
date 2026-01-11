@@ -1,3 +1,15 @@
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, setDoc, increment, onSnapshot } from 'firebase/firestore';
+
+// --- Global Constants ---
+const MODEL_NAME_FLASH = "gemini-2.5-flash-preview-09-2025";
+const API_KEY = ""; // کلیلەکە لێرە جێگیر دەکرێت
+const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
+
+// بەستەری وێنەی ئایکۆنەکە کە ناردووتە
+const APP_ICON_URL = "https://i.ibb.co/zhGP9H13/IMG-1261.png";
 
 // --- Design Constants ---
 const PRIMARY_COLOR = 'bg-teal-700';
@@ -134,6 +146,44 @@ export default function App() {
   const [chatHistory, setChatHistory] = useState([]);
 
   const t = (k) => (UI_TEXT[language] && UI_TEXT[language][k]) || k;
+
+  // جێگیرکردنی ئایکۆنەکە بە شێوەی هەمیشەیی
+  useEffect(() => {
+    // بۆ تابی بڕاوسەر
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.getElementsByTagName('head')[0].appendChild(link);
+    }
+    link.href = APP_ICON_URL;
+
+    // بۆ کورتەبڕی شاشەی موبایل
+    let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
+    if (!appleIcon) {
+      appleIcon = document.createElement('link');
+      appleIcon.rel = 'apple-touch-icon';
+      document.getElementsByTagName('head')[0].appendChild(appleIcon);
+    }
+    appleIcon.href = APP_ICON_URL;
+
+    // بۆ کاتی شەیرکردن (Meta Tags)
+    const updateMeta = (name, content, attr = 'property') => {
+      let meta = document.querySelector(`meta[${attr}='${name}']`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute(attr, name);
+        document.getElementsByTagName('head')[0].appendChild(meta);
+      }
+      meta.setAttribute('content', content);
+    };
+
+    updateMeta('og:image', APP_ICON_URL);
+    updateMeta('og:title', 'iDoctors App');
+    updateMeta('twitter:image', APP_ICON_URL);
+    updateMeta('description', 'Your medical assistant powered by AI', 'name');
+
+  }, []);
 
   useEffect(() => {
     const initFirebase = async () => {
@@ -277,19 +327,17 @@ export default function App() {
         
         {/* Header */}
         <header className={`${PRIMARY_COLOR} pt-10 pb-8 px-6 text-white rounded-b-[40px] shadow-lg relative overflow-hidden`}>
-          {/* Subtle Background Glow */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
           
           <div className="flex justify-between items-center relative z-10">
             <h1 className="text-xl font-black flex items-center gap-2">
-              {/* Requested Custom Icon */}
               <div className="bg-white p-0.5 rounded-lg overflow-hidden flex items-center justify-center w-10 h-10 shadow-sm">
-                <img src="https://i.ibb.co/nN9nYZ1q/IMG-1261.png" alt="iDoctors Logo" className="w-full h-full object-contain" />
+                {/* ئێرە ئایکۆنەکە دیارە تەنیشت iDoctors */}
+                <img src={APP_ICON_URL} alt="iDoctors Logo" className="w-full h-full object-contain" />
               </div>
               {t('app_title')}
             </h1>
             
-            {/* Language Switcher */}
             <div className="flex bg-white/10 backdrop-blur-xl border border-white/20 p-1 rounded-2xl shadow-inner">
               {['ku', 'ar', 'en'].map(l => (
                   <button 
